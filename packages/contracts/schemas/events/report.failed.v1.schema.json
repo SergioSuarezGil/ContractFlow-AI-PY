@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contractflow.local/events/report.failed.v1.schema.json",
+  "title": "ReportFailedV1Payload",
+  "type": "object",
+  "required": ["jobId", "contractId", "ownerId", "comparisonId", "errorMessage"],
+  "properties": {
+    "jobId": { "type": "string" },
+    "contractId": { "type": "string" },
+    "ownerId": { "type": "string" },
+    "comparisonId": { "type": "string" },
+    "errorMessage": { "type": "string" }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contractflow.local/events/report.completed.v1.schema.json",
+  "title": "ReportCompletedV1Payload",
+  "type": "object",
+  "required": [
+    "jobId",
+    "contractId",
+    "ownerId",
+    "comparisonId",
+    "reportId",
+    "storageKey",
+    "fileName",
+    "contentType",
+    "sizeBytes"
+  ],
+  "properties": {
+    "jobId": { "type": "string" },
+    "contractId": { "type": "string" },
+    "ownerId": { "type": "string" },
+    "comparisonId": { "type": "string" },
+    "reportId": { "type": "string" },
+    "storageKey": { "type": "string" },
+    "fileName": { "type": "string" },
+    "contentType": { "type": "string" },
+    "sizeBytes": { "type": "number" }
+  },
+  "additionalProperties": false
+}

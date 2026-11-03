@@ -1,0 +1,39 @@
+# Scrape config mounted by infra/compose.observability.python.yaml.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: contracts-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["contracts-api:3000"]
+        labels:
+          service: contracts-api
+          stack: typescript
+
+  - job_name: ai-worker
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["ai-worker:3001"]
+        labels:
+          service: ai-worker
+          stack: typescript
+
+  - job_name: pdf-worker
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["pdf-worker:3002"]
+        labels:
+          service: pdf-worker
+          stack: typescript
+
+  - job_name: contractflow-py
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:3010
+          - host.docker.internal:3011
+          - host.docker.internal:3012
+        labels:
+          stack: python

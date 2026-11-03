@@ -1,0 +1,39 @@
+# syntax=docker/dockerfile:1.7
+
+FROM ghcr.io/astral-sh/uv:0.13.7 AS uv
+
+FROM python:3.12.16-slim-bookworm AS base
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
+WORKDIR /app
+COPY --from=uv /uv /usr/local/bin/uv
+
+FROM base AS deps
+COPY pyproject.toml uv.lock .python-version ./
+COPY apps ./apps
+COPY packages ./packages
+RUN uv sync --frozen --no-dev --package contractflow-ai-worker
+
+FROM base AS runtime
+RUN useradd --create-home --uid 10001 appuser
+COPY --from=deps /app/.venv /app/.venv
+COPY apps/ai_worker/src apps/ai_worker/src
+COPY packages/shared/src packages/shared/src
+COPY packages/contracts/src packages/contracts/src
+COPY packages/contracts/schemas packages/contracts/schemas
+COPY packages/observability/src packages/observability/src
+COPY packages/grpc_contractflow/src packages/grpc_contractflow/src
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONPATH="/app/apps/ai_worker/src:/app/packages/shared/src:/app/packages/contracts/src:/app/packages/observability/src:/app/packages/grpc_contractflow/src" \
+    AI_WORKER_PORT=3011 \
+    AI_WORKER_CONSUME=true \
+    MESSAGING=rabbit \
+    LLM_PROVIDER=mock
+USER appuser
+EXPOSE 3011
+EXPOSE 50052
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=8 \
+  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3011/health')"
+CMD ["uvicorn", "ai_worker.main:app", "--host", "0.0.0.0", "--port", "3011"]

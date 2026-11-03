@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contractflow.local/events/comparison.completed.v1.schema.json",
+  "title": "ComparisonCompletedV1Payload",
+  "type": "object",
+  "required": ["jobId", "contractId", "ownerId", "comparisonId", "verdict", "comparison"],
+  "properties": {
+    "jobId": { "type": "string" },
+    "contractId": { "type": "string" },
+    "ownerId": { "type": "string" },
+    "comparisonId": { "type": "string" },
+    "verdict": { "type": "string" },
+    "comparison": {
+      "$ref": "https://contractflow.local/events/comparison-result.schema.json"
+    }
+  },
+  "additionalProperties": false
+}

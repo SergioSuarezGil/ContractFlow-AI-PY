@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contractflow.local/events/comparison-result.schema.json",
+  "title": "ComparisonResult",
+  "type": "object",
+  "required": [
+    "id",
+    "jobId",
+    "contractId",
+    "verdict",
+    "summary",
+    "priceNotes",
+    "coverageNotes",
+    "risks",
+    "disclaimer",
+    "createdAt"
+  ],
+  "properties": {
+    "id": { "type": "string" },
+    "jobId": { "type": "string" },
+    "contractId": { "type": "string" },
+    "verdict": { "type": "string", "enum": ["better", "worse", "depends"] },
+    "summary": { "type": "string" },
+    "priceNotes": { "type": "string" },
+    "coverageNotes": { "type": "string" },
+    "risks": { "type": "array", "items": { "type": "string" } },
+    "disclaimer": { "type": "string" },
+    "createdAt": { "type": "string" }
+  },
+  "additionalProperties": true
+}

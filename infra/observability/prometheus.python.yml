@@ -1,0 +1,11 @@
+# Prometheus scrape job for host ports 3010-3012.
+scrape_configs:
+  - job_name: contractflow-py
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - host.docker.internal:3010
+          - host.docker.internal:3011
+          - host.docker.internal:3012
+        labels:
+          stack: python

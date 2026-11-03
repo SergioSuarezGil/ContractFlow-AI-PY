@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://contractflow.local/events/report.requested.v1.schema.json",
+  "title": "ReportRequestedV1Payload",
+  "type": "object",
+  "required": ["jobId", "contractId", "ownerId", "comparisonId", "comparison"],
+  "properties": {
+    "jobId": { "type": "string" },
+    "contractId": { "type": "string" },
+    "ownerId": { "type": "string" },
+    "comparisonId": { "type": "string" },
+    "comparison": {
+      "$ref": "https://contractflow.local/events/comparison-result.schema.json"
+    }
+  },
+  "additionalProperties": false
+}

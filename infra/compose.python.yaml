@@ -1,0 +1,210 @@
+# Python app overlay. Start shared infra first:
+#   ./scripts/infra_up.sh
+# Then:
+#   docker compose -f infra/compose.python.yaml up -d --build
+name: contractflow-py
+
+networks:
+  default:
+    name: contractflow_default
+    external: true
+
+services:
+  contracts-api:
+    container_name: contractflow-py-contracts-api
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.contracts-api
+    cpus: 0.25
+    mem_limit: 256m
+    ports:
+      - "127.0.0.1:3010:3010"
+    env_file:
+      - ../.env
+    environment:
+      APP_NAME: contractflow-ai-py
+      APP_SERVICE_NAME: contracts-api
+      APP_GIT_SHA: ${APP_GIT_SHA:-unknown}
+      APP_BUILD_TIME: ${APP_BUILD_TIME:-unknown}
+      ENVIRONMENT: development
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      AUTH_MODE: ${AUTH_MODE:-dev}
+      CONTRACTS_REPO: mongo
+      OBJECT_STORAGE: s3
+      MESSAGING: ${MESSAGING:-rabbit}
+      OUTBOX_ENABLED: ${OUTBOX_ENABLED:-true}
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-dev-internal}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/contractflow?directConnection=true}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://contractflow:contractflow@rabbitmq:5672}
+      S3_ENDPOINT: object-storage
+      S3_PORT: "4566"
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-test}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-test}
+      S3_FORCE_PATH_STYLE: "true"
+      S3_BUCKET_DOCUMENTS: ${S3_BUCKET_DOCUMENTS:-documents}
+      S3_BUCKET_REPORTS: ${S3_BUCKET_REPORTS:-reports}
+      AI_WORKER_GRPC_TARGET: ai-worker:50052
+      KEYCLOAK_URL: ${KEYCLOAK_URL:-http://keycloak:8080}
+      OIDC_ISSUER: ${OIDC_ISSUER:-http://localhost:8080/realms/contractflow}
+      OIDC_AUDIENCE: ${OIDC_AUDIENCE:-contractflow-web}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3010/health')",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 25s
+    restart: unless-stopped
+
+  ai-worker:
+    container_name: contractflow-py-ai-worker
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.ai-worker
+    cpus: 0.30
+    mem_limit: 384m
+    ports:
+      - "127.0.0.1:3011:3011"
+      - "127.0.0.1:50052:50052"
+    env_file:
+      - ../.env
+    environment:
+      APP_SERVICE_NAME: ai-worker
+      APP_GIT_SHA: ${APP_GIT_SHA:-unknown}
+      APP_BUILD_TIME: ${APP_BUILD_TIME:-unknown}
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      MESSAGING: rabbit
+      AI_WORKER_CONSUME: "true"
+      DOCUMENT_SOURCE: mongo
+      COMPARISON_STORE: mongo
+      AI_WORKER_GRPC_ENABLED: "true"
+      AI_WORKER_GRPC_PORT: "50052"
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/contractflow?directConnection=true}
+      MONGODB_DB: contractflow
+      S3_ENDPOINT: object-storage
+      S3_PORT: "4566"
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-test}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-test}
+      S3_FORCE_PATH_STYLE: "true"
+      S3_BUCKET_DOCUMENTS: ${S3_BUCKET_DOCUMENTS:-documents}
+      CONTRACTS_API_INTERNAL_URL: http://contracts-api:3010
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-dev-internal}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://contractflow:contractflow@rabbitmq:5672}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3011/health')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 25s
+    restart: unless-stopped
+
+  pdf-worker:
+    container_name: contractflow-py-pdf-worker
+    build:
+      context: ..
+      dockerfile: infra/docker/Dockerfile.pdf-worker
+    cpus: 0.20
+    mem_limit: 256m
+    ports:
+      - "127.0.0.1:3012:3012"
+    env_file:
+      - ../.env
+    environment:
+      APP_SERVICE_NAME: pdf-worker
+      APP_GIT_SHA: ${APP_GIT_SHA:-unknown}
+      APP_BUILD_TIME: ${APP_BUILD_TIME:-unknown}
+      MESSAGING: rabbit
+      PDF_WORKER_CONSUME: "true"
+      PDF_STORAGE: s3
+      CONTRACTS_API_INTERNAL_URL: http://contracts-api:3010
+      INTERNAL_API_TOKEN: ${INTERNAL_API_TOKEN:-dev-internal}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://contractflow:contractflow@rabbitmq:5672}
+      S3_ENDPOINT: object-storage
+      S3_PORT: "4566"
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:-test}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:-test}
+      S3_FORCE_PATH_STYLE: "true"
+      S3_BUCKET_REPORTS: ${S3_BUCKET_REPORTS:-reports}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3012/health')",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 25s
+    restart: unless-stopped
+
+  # React demo on the Keycloak redirect origin. Static build comes from the
+  # sibling TS repo; this nginx file forces /api to the Python API.
+  web-demo:
+    container_name: contractflow-py-web
+    build:
+      context: ../../ContractFlow-AI-TS
+      dockerfile: infra/docker/Dockerfile.web
+      args:
+        VITE_OIDC_AUTHORITY: ${VITE_OIDC_AUTHORITY:-http://localhost:8080/realms/contractflow}
+        VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:-contractflow-web}
+        VITE_API_BASE: ""
+    cpus: 0.10
+    mem_limit: 64m
+    ports:
+      - "127.0.0.1:8088:80"
+    volumes:
+      - ./nginx/web-demo.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      contracts-api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Optional lightweight stubs (legacy): docker compose --profile stubs ...
+  ai-worker-stub:
+    container_name: contractflow-py-ai-worker-stub
+    image: python:3.12.16-slim-bookworm
+    cpus: 0.10
+    mem_limit: 64m
+    working_dir: /stub
+    volumes:
+      - ./stubs/health_stub.py:/stub/health_stub.py:ro
+    environment:
+      STUB_SERVICE: ai-worker
+      STUB_PORT: "3111"
+    command: ["python", "/stub/health_stub.py"]
+    ports:
+      - "127.0.0.1:3111:3111"
+    profiles: ["stubs"]
+    restart: unless-stopped
+
+  pdf-worker-stub:
+    container_name: contractflow-py-pdf-worker-stub
+    image: python:3.12.16-slim-bookworm
+    cpus: 0.10
+    mem_limit: 64m
+    working_dir: /stub
+    volumes:
+      - ./stubs/health_stub.py:/stub/health_stub.py:ro
+    environment:
+      STUB_SERVICE: pdf-worker
+      STUB_PORT: "3112"
+    command: ["python", "/stub/health_stub.py"]
+    ports:
+      - "127.0.0.1:3112:3112"
+    profiles: ["stubs"]
+    restart: unless-stopped

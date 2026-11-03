@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package contractflow.v1;
+
+// Synchronous comparison lookup (API → ai-worker). Async work stays on RabbitMQ.
+service ComparisonLookup {
+  rpc GetByJobId (GetComparisonByJobIdRequest) returns (ComparisonLookupResponse);
+}
+
+message GetComparisonByJobIdRequest {
+  string job_id = 1;
+}
+
+message ComparisonLookupResponse {
+  bool found = 1;
+  string job_id = 2;
+  string comparison_id = 3;
+  string contract_id = 4;
+  string verdict = 5;
+  string summary = 6;
+  string created_at = 7;
+}

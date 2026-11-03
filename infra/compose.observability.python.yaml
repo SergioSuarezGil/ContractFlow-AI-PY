@@ -1,0 +1,8 @@
+# Optional Prometheus overlay. Scrapes host ports 3010-3012.
+# Pass the base observability compose as the first -f file.
+services:
+  prometheus:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./observability/prometheus.merged.yml:/etc/prometheus/prometheus.yml:ro

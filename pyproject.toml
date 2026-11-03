@@ -1,0 +1,53 @@
+[project]
+name = "contractflow-ai-py"
+version = "0.1.0"
+description = "ContractFlow AI — Python / FastAPI twin of ContractFlow-AI-TS"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "Apache-2.0" }
+dependencies = []
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3.0",
+  "httpx>=0.28.0",
+  "ruff>=0.9.0",
+  "contractflow-contracts-api",
+  "contractflow-shared",
+  "contractflow-contracts",
+  "contractflow-ai-worker",
+  "contractflow-pdf-worker",
+  "contractflow-observability",
+  "contractflow-grpc",
+  "contractflow-mcp-server",
+]
+
+[tool.uv.sources]
+contractflow-contracts-api = { workspace = true }
+contractflow-shared = { workspace = true }
+contractflow-contracts = { workspace = true }
+contractflow-ai-worker = { workspace = true }
+contractflow-pdf-worker = { workspace = true }
+contractflow-observability = { workspace = true }
+contractflow-grpc = { workspace = true }
+contractflow-mcp-server = { workspace = true }
+
+[tool.uv.workspace]
+members = ["apps/*", "packages/*"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "apps", "packages"]
+python_files = ["test_*.py", "*_test.py"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["apps", "packages", "tests"]
+extend-exclude = ["infra/stubs", "**/*_pb2.py", "**/*_pb2_grpc.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
